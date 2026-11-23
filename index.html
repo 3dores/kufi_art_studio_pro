@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kufi Art Studio Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #111111;
+      color: #f3f4f6;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    /* Custom subtle scrollbars if needed on tiny viewports */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #141414;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2e2e2e;
+      border-radius: 9999px;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen bg-[#111111] text-gray-100 p-2 sm:p-3 gap-2">
+
+  <!-- HEADER & TOP TOOLBAR -->
+  <header class="flex flex-col items-center justify-center shrink-0 gap-2 pt-0.5">
+    <!-- Title -->
+    <div class="text-center leading-tight">
+      <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">Kufi Art Studio Pro</h1>
+    </div>
+
+    <!-- Top Control Pill Bar -->
+    <div class="flex flex-wrap items-center justify-center gap-1.5 bg-[#191919] border border-[#2c2c2c] rounded-xl px-2.5 py-1.5 shadow-lg max-w-full">
+      
+      <!-- Kolom (K) Input -->
+      <div class="flex items-center gap-1.5 bg-[#222222] border border-[#333333] rounded-lg px-2 py-1">
+        <label for="inputCols" class="text-xs font-semibold text-neutral-300 cursor-pointer" title="Jumlah Kolom Grid">K:</label>
+        <input
+          id="inputCols"
+          type="number"
+          min="4"
+          max="128"
+          value="17"
+          class="w-12 bg-white text-neutral-900 font-semibold text-xs rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+        />
+      </div>
+
+      <!-- Baris (B) Input -->
+      <div class="flex items-center gap-1.5 bg-[#222222] border border-[#333333] rounded-lg px-2 py-1">
+        <label for="inputRows" class="text-xs font-semibold text-neutral-300 cursor-pointer" title="Jumlah Baris Grid">B:</label>
+        <input
+          id="inputRows"
+          type="number"
+          min="4"
+          max="128"
+          value="17"
+          class="w-12 bg-white text-neutral-900 font-semibold text-xs rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-2 focus:ring-amber-500"
+        />
+      </div>
+
+      <div class="h-5 w-[1px] bg-[#303030] mx-0.5 hidden sm:block"></div>
+
+      <!-- Toggle Grid Visibility / Guidelines (Lightning Icon) -->
+      <button
+        id="btnToggleGrid"
+        type="button"
+        title="Tampilkan / Sembunyikan Garis Bantu Grid"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-amber-400 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>
+        </svg>
+      </button>
+
+      <!-- Color Swatch & Quick Palette Dropdown -->
+      <div class="relative flex items-center">
+        <button
+          id="btnColorMenu"
+          type="button"
+          title="Pilih Warna Sel Kufi"
+          class="p-1.5 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] transition active:scale-95 flex items-center gap-1.5"
+        >
+          <span id="activeColorPreview" class="w-5 h-5 rounded border border-white/40 shadow-inner block" style="background-color: #f59e0b;"></span>
+          <svg class="w-3 h-3 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+          </svg>
+        </button>
+
+        <!-- Popover Color Picker -->
+        <div
+          id="colorPopover"
+          class="hidden absolute top-11 left-0 z-50 bg-[#1e1e1e] border border-[#383838] rounded-xl p-3 shadow-2xl w-52"
+        >
+          <div class="text-[11px] font-medium text-neutral-400 mb-2">Palet Warna Kaligrafi</div>
+          <div class="grid grid-cols-5 gap-1.5 mb-2.5" id="presetSwatches">
+            <!-- Swatches populated by JS -->
+          </div>
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-[#2e2e2e]">
+            <span class="text-[11px] text-neutral-400">Kustom:</span>
+            <input
+              id="customColorInput"
+              type="color"
+              value="#f59e0b"
+              class="w-16 h-7 bg-transparent border border-[#3a3a3a] rounded cursor-pointer"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Brush / Draw Mode -->
+      <button
+        id="btnToolDraw"
+        type="button"
+        title="Mode Pena / Isi Kotak (D)"
+        class="p-2 rounded-lg bg-amber-500/20 border border-amber-500/60 text-amber-400 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+        </svg>
+      </button>
+
+      <!-- Eraser Mode -->
+      <button
+        id="btnToolErase"
+        type="button"
+        title="Mode Penghapus / Erase Kotak (E)"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-neutral-300 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10m-9.5-3.5l8.8-8.8a2.12 2.12 0 013 0l1.9 1.9a2.12 2.12 0 010 3l-6.4 6.4H7.5l-3-3a2.12 2.12 0 010-3l2.8-2.8 6.2 6.2" />
+        </svg>
+      </button>
+
+      <!-- Undo Button -->
+      <button
+        id="btnUndo"
+        type="button"
+        title="Urungkan / Undo (Ctrl+Z)"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-neutral-300 transition active:scale-95 flex items-center justify-center disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+        </svg>
+      </button>
+
+      <!-- Redo Button -->
+      <button
+        id="btnRedo"
+        type="button"
+        title="Ulangi / Redo (Ctrl+Y / Ctrl+Shift+Z)"
+        disabled
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-neutral-300 transition active:scale-95 flex items-center justify-center disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+        </svg>
+      </button>
+
+      <!-- Fit-to-Screen / Center Grid -->
+      <button
+        id="btnFitView"
+        type="button"
+        title="Paskan Grid ke Tengah Kanvas"
+        class="p-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/50 text-sky-400 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+        </svg>
+      </button>
+
+      <!-- Reset Studio (Default 17x17, Clear Cells, Reset History & View) -->
+      <button
+        id="btnReset"
+        type="button"
+        title="Reset Studio ke Default (17 × 17)"
+        class="p-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
+      </button>
+
+      <div class="h-5 w-[1px] bg-[#303030] mx-0.5 hidden sm:block"></div>
+
+      <!-- Zoom In -->
+      <button
+        id="btnZoomIn"
+        type="button"
+        title="Perbesar Tampilan (+)"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-sky-300 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+        </svg>
+      </button>
+
+      <!-- Zoom Out -->
+      <button
+        id="btnZoomOut"
+        type="button"
+        title="Perkecil Tampilan (-)"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-sky-300 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM13.5 10.5h-6" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE CANVAS CONTAINER -->
+  <main
+    id="canvasWrapper"
+    class="relative flex-1 w-full min-h-0 bg-[#151515] border border-[#2a2a2a] rounded-xl overflow-hidden shadow-inner"
+  >
+    <canvas id="kufiCanvas"></canvas>
+
+    <!-- Status HUD Overlay (Bottom-Left inside Canvas) -->
+    <div class="pointer-events-none absolute bottom-2.5 left-3 flex items-center gap-2 bg-[#111111]/85 backdrop-blur-sm border border-[#2c2c2c] rounded-lg px-2.5 py-1 text-[11px] text-neutral-400">
+      <span id="hudGridInfo" class="font-medium text-neutral-200">Grid: 17 × 17</span>
+      <span>•</span>
+      <span id="hudZoomInfo">Zoom: 100%</span>
+      <span class="hidden md:inline">•</span>
+      <span id="hudCursorInfo" class="hidden md:inline text-amber-400/90">Siap menggambar</span>
+    </div>
+
+    <!-- Quick Tip Overlay (Bottom-Right inside Canvas) -->
+    <div class="pointer-events-none hidden lg:flex absolute bottom-2.5 right-3 items-center gap-2 bg-[#111111]/85 backdrop-blur-sm border border-[#2c2c2c] rounded-lg px-2.5 py-1 text-[11px] text-neutral-400">
+      <span>Klik/Seret: Isi / Erase</span>
+      <span>•</span>
+      <span>Klik Kanan: Erase Cepat</span>
+      <span>•</span>
+      <span>Spasi + Seret / Scroll: Geser &amp; Zoom</span>
+    </div>
+  </main>
+
+  <!-- BOTTOM EXPORT & FILE TOOLBAR -->
+  <footer class="flex items-center justify-center shrink-0 pb-0.5">
+    <div class="flex flex-wrap items-center justify-center gap-1.5 bg-[#191919] border border-[#2c2c2c] rounded-xl px-2.5 py-1.5 shadow-lg">
+      
+      <!-- New Document -->
+      <button
+        id="btnNewDoc"
+        type="button"
+        title="Buat Kanvas Baru"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-neutral-200 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      </button>
+
+      <!-- Save Project JSON -->
+      <button
+        id="btnSaveJson"
+        type="button"
+        title="Simpan Proyek (.json)"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-indigo-300 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+        </svg>
+      </button>
+
+      <!-- Open Project JSON -->
+      <button
+        id="btnOpenJson"
+        type="button"
+        title="Buka File Proyek (.json)"
+        class="p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-amber-300 transition active:scale-95 flex items-center justify-center"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" />
+        </svg>
+      </button>
+      <input id="fileInputJson" type="file" accept=".json,application/json" class="hidden" />
+
+      <div class="h-5 w-[1px] bg-[#303030] mx-0.5"></div>
+
+      <!-- Export SVG -->
+      <button
+        id="btnExportSvg"
+        type="button"
+        class="px-3 py-1.5 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-xs font-semibold text-white transition active:scale-95 flex items-center gap-1.5"
+      >
+        <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        <span>SVG</span>
+      </button>
+
+      <!-- Export PNG -->
+      <button
+        id="btnExportPng"
+        type="button"
+        class="px-3 py-1.5 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-xs font-semibold text-white transition active:scale-95 flex items-center gap-1.5"
+      >
+        <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        <span>PNG</span>
+      </button>
+
+      <!-- Export JPG -->
+      <button
+        id="btnExportJpg"
+        type="button"
+        class="px-3 py-1.5 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-xs font-semibold text-white transition active:scale-95 flex items-center gap-1.5"
+      >
+        <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+        <span>JPG</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- Custom Non-Blocking Toast / Confirmation Modal -->
+  <div id="toastBanner" class="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-50 opacity-0 transition-opacity duration-200 bg-[#222222] border border-[#3b3b3b] text-white text-xs font-medium px-3.5 py-2 rounded-xl shadow-xl">
+    Pesan status
+  </div>
+
+  <div id="confirmDialog" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs items-center justify-center p-4">
+    <div class="bg-[#1c1c1c] border border-[#343434] rounded-2xl p-5 max-w-sm w-full shadow-2xl">
+      <h2 id="confirmTitle" class="text-sm font-bold text-white mb-1.5">Konfirmasi</h2>
+      <p id="confirmMessage" class="text-xs text-neutral-300 mb-4 leading-relaxed">Apakah Anda yakin ingin melanjutkan?</p>
+      <div class="flex justify-end gap-2">
+        <button id="confirmCancel" type="button" class="px-3 py-1.5 rounded-lg bg-[#282828] hover:bg-[#333333] text-xs font-medium text-neutral-300 transition">Batal</button>
+        <button id="confirmOk" type="button" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-xs font-semibold text-neutral-950 transition">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * Kufi Art Studio Pro
+     * Aplikasi Desain Kaligrafi Kufi Murabba' Vektor & Piksel Mandiri
+     * Perbaikan: Auto-sizing canvas high-DPI + render grid instan & selalu terlihat.
+     */
+    (function () {
+      // --- STATE APLIKASI ---
+      const state = {
+        cols: 17,              // K: Jumlah kolom default
+        rows: 17,              // B: Jumlah baris default
+        cells: new Map(),      // Key: "c,r" -> Value: hex color string
+        history: [],           // Stack untuk Undo
+        redoStack: [],         // Stack untuk Redo
+        activeColor: '#f59e0b',
+        tool: 'draw',          // 'draw' | 'erase'
+        showGrid: true,        // Toggle garis grid & bantu
+        zoom: 1,               // Faktor zoom relatif terhadap auto-fit
+        panX: 0,               // Offset geser X (CSS pixels)
+        panY: 0,               // Offset geser Y (CSS pixels)
+        isDrawing: false,
+        dragAction: null,      // 'paint' | 'erase'
+        isPanning: false,
+        spacePressed: false,
+        lastPanClientX: 0,
+        lastPanClientY: 0,
+        hoverCell: null,       // { c, r }
+        canvasCssWidth: 0,
+        canvasCssHeight: 0,
+        dpr: Math.max(1, window.devicePixelRatio || 1)
+      };
+
+      const PRESET_COLORS = [
+        '#f59e0b', // Emas Klasik
+        '#ffffff', // Putih Bersih
+        '#38bdf8', // Biru Cyan
+        '#f43f5e', // Merah Delima
+        '#171717', // Hitam Pekat
+        '#10b981', // Hijau Zamrud
+        '#e5e7eb', // Perak Terang
+        '#a855f7', // Ungu Royal
+        '#fb923c', // Oranye Hangat
+        '#2dd4bf'  // Toska
+      ];
+
+      // --- ELEMEN DOM ---
+      const wrapper = document.getElementById('canvasWrapper');
+      const canvas = document.getElementById('kufiCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const inputCols = document.getElementById('inputCols');
+      const inputRows = document.getElementById('inputRows');
+      const btnToggleGrid = document.getElementById('btnToggleGrid');
+      const btnColorMenu = document.getElementById('btnColorMenu');
+      const colorPopover = document.getElementById('colorPopover');
+      const activeColorPreview = document.getElementById('activeColorPreview');
+      const presetSwatches = document.getElementById('presetSwatches');
+      const customColorInput = document.getElementById('customColorInput');
+
+      const btnToolDraw = document.getElementById('btnToolDraw');
+      const btnToolErase = document.getElementById('btnToolErase');
+      const btnUndo = document.getElementById('btnUndo');
+      const btnRedo = document.getElementById('btnRedo');
+      const btnFitView = document.getElementById('btnFitView');
+      const btnReset = document.getElementById('btnReset');
+      const btnZoomIn = document.getElementById('btnZoomIn');
+      const btnZoomOut = document.getElementById('btnZoomOut');
+
+      const btnNewDoc = document.getElementById('btnNewDoc');
+      const btnSaveJson = document.getElementById('btnSaveJson');
+      const btnOpenJson = document.getElementById('btnOpenJson');
+      const fileInputJson = document.getElementById('fileInputJson');
+      const btnExportSvg = document.getElementById('btnExportSvg');
+      const btnExportPng = document.getElementById('btnExportPng');
+      const btnExportJpg = document.getElementById('btnExportJpg');
+
+      const hudGridInfo = document.getElementById('hudGridInfo');
+      const hudZoomInfo = document.getElementById('hudZoomInfo');
+      const hudCursorInfo = document.getElementById('hudCursorInfo');
+      const toastBanner = document.getElementById('toastBanner');
+
+      // --- TOAST & MODAL KONFIRMASI (PENGGANTI ALERT/CONFIRM) ---
+      let toastTimer = null;
+      function showToast(msg) {
+        toastBanner.textContent = msg;
+        toastBanner.classList.remove('opacity-0');
+        toastBanner.classList.add('opacity-100');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toastBanner.classList.remove('opacity-100');
+          toastBanner.classList.add('opacity-0');
+        }, 2200);
+      }
+
+      function showConfirm(title, message, onConfirm) {
+        const dialog = document.getElementById('confirmDialog');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('confirmOk');
+        const cancelBtn = document.getElementById('confirmCancel');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+        dialog.classList.remove('hidden');
+        dialog.classList.add('flex');
+
+        const cleanup = () => {
+          dialog.classList.add('hidden');
+          dialog.classList.remove('flex');
+          okBtn.onclick = null;
+          cancelBtn.onclick = null;
+        };
+
+        cancelBtn.onclick = cleanup;
+        okBtn.onclick = () => {
+          cleanup();
+          onConfirm();
+        };
+      }
+
+      // --- INISIALISASI PALET WARNA ---
+      function initPalette() {
+        presetSwatches.innerHTML = '';
+        PRESET_COLORS.forEach((hex) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'w-7 h-7 rounded-lg border border-white/25 hover:scale-110 transition shadow-sm';
+          btn.style.backgroundColor = hex;
+          btn.title = hex;
+          btn.addEventListener('click', () => {
+            setActiveColor(hex);
+            colorPopover.classList.add('hidden');
+          });
+          presetSwatches.appendChild(btn);
+        });
+      }
+
+      function setActiveColor(hex) {
+        state.activeColor = hex;
+        activeColorPreview.style.backgroundColor = hex;
+        customColorInput.value = hex;
+        setTool('draw');
+      }
+
+      // --- PENGUKURAN KANVAS & GEOMETRI GRID ---
+      function resizeCanvas() {
+        const rect = wrapper.getBoundingClientRect();
+        // Pastikan selalu memiliki dimensi minimal yang valid agar grid tidak pernah 0px
+        const cssW = Math.max(200, Math.floor(rect.width));
+        const cssH = Math.max(200, Math.floor(rect.height));
+        const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+        state.canvasCssWidth = cssW;
+        state.canvasCssHeight = cssH;
+        state.dpr = dpr;
+
+        canvas.width = Math.floor(cssW * dpr);
+        canvas.height = Math.floor(cssH * dpr);
+
+        render();
+      }
+
+      /**
+       * Menghitung ukuran sel dasar & koordinat awal grid agar pas di tengah kanvas
+       */
+      function getGridMetrics() {
+        const padding = 28; // Ruang napas di sekeliling grid
+        const availW = Math.max(80, state.canvasCssWidth - padding * 2);
+        const availH = Math.max(80, state.canvasCssHeight - padding * 2);
+
+        const baseCellSize = Math.min(availW / state.cols, availH / state.rows);
+        const cellSize = Math.max(4, baseCellSize * state.zoom);
+
+        const gridWidth = cellSize * state.cols;
+        const gridHeight = cellSize * state.rows;
+
+        const originX = (state.canvasCssWidth - gridWidth) / 2 + state.panX;
+        const originY = (state.canvasCssHeight - gridHeight) / 2 + state.panY;
+
+        return { cellSize, gridWidth, gridHeight, originX, originY };
+      }
+
+      // --- FUNGSI RENDER UTAMA (KANVAS + SEL + GRID) ---
+      function render() {
+        if (!ctx || state.canvasCssWidth <= 0 || state.canvasCssHeight <= 0) return;
+
+        const dpr = state.dpr;
+        ctx.save();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // 1. Bersihkan latar belakang kanvas
+        ctx.fillStyle = '#151515';
+        ctx.fillRect(0, 0, state.canvasCssWidth, state.canvasCssHeight);
+
+        const { cellSize, gridWidth, gridHeight, originX, originY } = getGridMetrics();
+
+        // 2. Gambar alas papan grid agar kontras & terlihat jelas
+        ctx.fillStyle = '#1c1c1c';
+        ctx.fillRect(originX, originY, gridWidth, gridHeight);
+
+        // Pola papan catur sangat halus agar tiap kotak langsung terbaca
+        for (let r = 0; r < state.rows; r++) {
+          for (let c = 0; c < state.cols; c++) {
+            if ((r + c) % 2 === 1) {
+              ctx.fillStyle = '#202020';
+              ctx.fillRect(
+                originX + c * cellSize,
+                originY + r * cellSize,
+                cellSize,
+                cellSize
+              );
+            }
+          }
+        }
+
+        // 3. Gambar sel kaligrafi yang sudah diisi warna
+        state.cells.forEach((color, key) => {
+          const [cStr, rStr] = key.split(',');
+          const c = Number(cStr);
+          const r = Number(rStr);
+          if (c >= 0 && c < state.cols && r >= 0 && r < state.rows) {
+            ctx.fillStyle = color;
+            // Sedikit overlap 0.35px mencegah garis celah sub-piksel antar kotak warna
+            ctx.fillRect(
+              originX + c * cellSize,
+              originY + r * cellSize,
+              cellSize + 0.35,
+              cellSize + 0.35
+            );
+          }
+        });
+
+        // 4. Sorot sel di bawah kursor (Hover indicator)
+        if (state.hoverCell && !state.isPanning) {
+          const { c, r } = state.hoverCell;
+          if (c >= 0 && c < state.cols && r >= 0 && r < state.rows) {
+            ctx.fillStyle = state.tool === 'erase'
+              ? 'rgba(239, 68, 68, 0.28)'
+              : 'rgba(245, 158, 11, 0.25)';
+            ctx.fillRect(
+              originX + c * cellSize,
+              originY + r * cellSize,
+              cellSize,
+              cellSize
+            );
+          }
+        }
+
+        // 5. Gambar garis-garis Grid Kufi Murabba' (SELALU JELAS & TAJAM)
+        if (state.showGrid) {
+          // Garis minor setiap 1 sel
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+          ctx.lineWidth = 1;
+
+          for (let c = 0; c <= state.cols; c++) {
+            const x = Math.round(originX + c * cellSize) + 0.5;
+            ctx.moveTo(x, originY);
+            ctx.lineTo(x, originY + gridHeight);
+          }
+          for (let r = 0; r <= state.rows; r++) {
+            const y = Math.round(originY + r * cellSize) + 0.5;
+            ctx.moveTo(originX, y);
+            ctx.lineTo(originX + gridWidth, y);
+          }
+          ctx.stroke();
+
+          // Garis mayor setiap 4 sel untuk memudahkan proporsi Kufi
+          if (cellSize >= 6) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+            ctx.lineWidth = 1;
+
+            for (let c = 4; c < state.cols; c += 4) {
+              const x = Math.round(originX + c * cellSize) + 0.5;
+              ctx.moveTo(x, originY);
+              ctx.lineTo(x, originY + gridHeight);
+            }
+            for (let r = 4; r < state.rows; r += 4) {
+              const y = Math.round(originY + r * cellSize) + 0.5;
+              ctx.moveTo(originX, y);
+              ctx.lineTo(originX + gridWidth, y);
+            }
+            ctx.stroke();
+          }
+
+          // Garis tengah simetri (Center crosshair)
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+          ctx.lineWidth = 1;
+          const midX = Math.round(originX + gridWidth / 2) + 0.5;
+          const midY = Math.round(originY + gridHeight / 2) + 0.5;
+          ctx.moveTo(midX, originY);
+          ctx.lineTo(midX, originY + gridHeight);
+          ctx.moveTo(originX, midY);
+          ctx.lineTo(originX + gridWidth, midY);
+          ctx.stroke();
+        }
+
+        // 6. Bingkai luar papan grid (selalu terlihat walau garis minor dimatikan)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.42)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(
+          Math.round(originX) + 0.5,
+          Math.round(originY) + 0.5,
+          Math.round(gridWidth),
+          Math.round(gridHeight)
+        );
+
+        ctx.restore();
+
+        // Update HUD info
+        hudGridInfo.textContent = `Grid: ${state.cols} × ${state.rows}`;
+        hudZoomInfo.textContent = `Zoom: ${Math.round(state.zoom * 100)}%`;
+      }
+
+      // --- INTERAKSI KOORDINAT & GAMBAR SEL ---
+      function clientToCell(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        const { cellSize, originX, originY } = getGridMetrics();
+
+        const c = Math.floor((x - originX) / cellSize);
+        const r = Math.floor((y - originY) / cellSize);
+
+        if (c < 0 || c >= state.cols || r < 0 || r >= state.rows) {
+          return null;
+        }
+        return { c, r };
+      }
+
+      function saveHistorySnapshot() {
+        const snapshot = new Map(state.cells);
+        state.history.push(snapshot);
+        if (state.history.length > 50) {
+          state.history.shift();
+        }
+        // Setiap tindakan baru mengosongkan redoStack
+        state.redoStack = [];
+        updateHistoryButtons();
+      }
+
+      function updateHistoryButtons() {
+        btnUndo.disabled = state.history.length === 0;
+        btnRedo.disabled = state.redoStack.length === 0;
+      }
+
+      function applyCellAction(c, r, action) {
+        const key = `${c},${r}`;
+        if (action === 'paint') {
+          if (state.cells.get(key) !== state.activeColor) {
+            state.cells.set(key, state.activeColor);
+            render();
+          }
+        } else if (action === 'erase') {
+          if (state.cells.has(key)) {
+            state.cells.delete(key);
+            render();
+          }
+        }
+      }
+
+      // --- EVENT POINTER (MOUSE & TOUCH) ---
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      canvas.addEventListener('pointerdown', (e) => {
+        colorPopover.classList.add('hidden');
+        canvas.setPointerCapture(e.pointerId);
+
+        // Middle click atau Space+Click -> Mode geser (Pan)
+        if (e.button === 1 || state.spacePressed) {
+          state.isPanning = true;
+          state.lastPanClientX = e.clientX;
+          state.lastPanClientY = e.clientY;
+          canvas.style.cursor = 'grabbing';
+          return;
+        }
+
+        const cell = clientToCell(e.clientX, e.clientY);
+        if (!cell) return;
+
+        saveHistorySnapshot();
+        state.isDrawing = true;
+
+        // Klik kanan selalu menghapus, atau jika tool aktif adalah 'erase'
+        if (e.button === 2 || state.tool === 'erase') {
+          state.dragAction = 'erase';
+        } else {
+          state.dragAction = 'paint';
+        }
+
+        applyCellAction(cell.c, cell.r, state.dragAction);
+      });
+
+      canvas.addEventListener('pointermove', (e) => {
+        if (state.isPanning) {
+          const dx = e.clientX - state.lastPanClientX;
+          const dy = e.clientY - state.lastPanClientY;
+          state.panX += dx;
+          state.panY += dy;
+          state.lastPanClientX = e.clientX;
+          state.lastPanClientY = e.clientY;
+          render();
+          return;
+        }
+
+        const cell = clientToCell(e.clientX, e.clientY);
+        const prevHover = state.hoverCell;
+        state.hoverCell = cell;
+
+        if (cell) {
+          hudCursorInfo.textContent = `Kolom ${cell.c + 1}, Baris ${cell.r + 1}`;
+        } else {
+          hudCursorInfo.textContent = 'Di luar area grid';
+        }
+
+        if (state.isDrawing && cell && state.dragAction) {
+          applyCellAction(cell.c, cell.r, state.dragAction);
+        } else if (
+          (prevHover?.c !== cell?.c) ||
+          (prevHover?.r !== cell?.r)
+        ) {
+          render();
+        }
+      });
+
+      function stopPointerInteraction(e) {
+        if (state.isPanning) {
+          state.isPanning = false;
+          canvas.style.cursor = state.spacePressed ? 'grab' : 'crosshair';
+        }
+        state.isDrawing = false;
+        state.dragAction = null;
+      }
+
+      canvas.addEventListener('pointerup', stopPointerInteraction);
+      canvas.addEventListener('pointercancel', stopPointerInteraction);
+      canvas.addEventListener('pointerleave', () => {
+        state.hoverCell = null;
+        if (!state.isDrawing && !state.isPanning) render();
+      });
+
+      // Zoom dengan scroll wheel
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.12 : 0.89;
+        setZoom(state.zoom * factor);
+      }, { passive: false });
+
+      // --- KONTROL TOOLBAR ATAS ---
+      function updateGridDimensions() {
+        const nextCols = Math.min(128, Math.max(4, parseInt(inputCols.value, 10) || 17));
+        const nextRows = Math.min(128, Math.max(4, parseInt(inputRows.value, 10) || 17));
+        inputCols.value = nextCols;
+        inputRows.value = nextRows;
+
+        state.cols = nextCols;
+        state.rows = nextRows;
+        render();
+      }
+
+      inputCols.addEventListener('input', updateGridDimensions);
+      inputCols.addEventListener('change', updateGridDimensions);
+      inputRows.addEventListener('input', updateGridDimensions);
+      inputRows.addEventListener('change', updateGridDimensions);
+
+      btnToggleGrid.addEventListener('click', () => {
+        state.showGrid = !state.showGrid;
+        btnToggleGrid.classList.toggle('text-amber-400', state.showGrid);
+        btnToggleGrid.classList.toggle('text-neutral-500', !state.showGrid);
+        render();
+        showToast(state.showGrid ? 'Garis grid ditampilkan' : 'Garis grid disembunyikan');
+      });
+
+      btnColorMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        colorPopover.classList.toggle('hidden');
+      });
+
+      customColorInput.addEventListener('input', (e) => {
+        setActiveColor(e.target.value);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!colorPopover.contains(e.target) && !btnColorMenu.contains(e.target)) {
+          colorPopover.classList.add('hidden');
+        }
+      });
+
+      function setTool(toolName) {
+        state.tool = toolName;
+        if (toolName === 'draw') {
+          btnToolDraw.className = 'p-2 rounded-lg bg-amber-500/20 border border-amber-500/60 text-amber-400 transition active:scale-95 flex items-center justify-center';
+          btnToolErase.className = 'p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-neutral-300 transition active:scale-95 flex items-center justify-center';
+          canvas.style.cursor = 'crosshair';
+        } else {
+          btnToolErase.className = 'p-2 rounded-lg bg-red-500/20 border border-red-500/60 text-red-400 transition active:scale-95 flex items-center justify-center';
+          btnToolDraw.className = 'p-2 rounded-lg bg-[#242424] hover:bg-[#2f2f2f] border border-[#363636] text-neutral-300 transition active:scale-95 flex items-center justify-center';
+          canvas.style.cursor = 'cell';
+        }
+        render();
+      }
+
+      btnToolDraw.addEventListener('click', () => setTool('draw'));
+      btnToolErase.addEventListener('click', () => setTool('erase'));
+
+      function undo() {
+        if (state.history.length === 0) {
+          showToast('Tidak ada langkah untuk diurungkan');
+          return;
+        }
+        state.redoStack.push(new Map(state.cells));
+        state.cells = state.history.pop();
+        updateHistoryButtons();
+        render();
+        showToast('Langkah terakhir diurungkan');
+      }
+
+      function redo() {
+        if (state.redoStack.length === 0) {
+          showToast('Tidak ada langkah untuk diulangi');
+          return;
+        }
+        state.history.push(new Map(state.cells));
+        state.cells = state.redoStack.pop();
+        updateHistoryButtons();
+        render();
+        showToast('Langkah diulangi (Redo)');
+      }
+
+      btnUndo.addEventListener('click', undo);
+      btnRedo.addEventListener('click', redo);
+
+      function setZoom(nextZoom) {
+        state.zoom = Math.min(6, Math.max(0.35, nextZoom));
+        render();
+      }
+
+      btnZoomIn.addEventListener('click', () => setZoom(state.zoom * 1.2));
+      btnZoomOut.addEventListener('click', () => setZoom(state.zoom / 1.2));
+
+      btnFitView.addEventListener('click', () => {
+        state.zoom = 1;
+        state.panX = 0;
+        state.panY = 0;
+        render();
+        showToast('Tampilan grid dipaskan ke tengah');
+      });
+
+      function resetStudio() {
+        state.cols = 17;
+        state.rows = 17;
+        inputCols.value = 17;
+        inputRows.value = 17;
+        state.cells.clear();
+        state.history = [];
+        state.redoStack = [];
+        state.zoom = 1;
+        state.panX = 0;
+        state.panY = 0;
+        updateHistoryButtons();
+        render();
+        showToast('Studio di-reset ke default (17 × 17)');
+      }
+
+      btnReset.addEventListener('click', () => {
+        if (
+          state.cells.size === 0 &&
+          state.cols === 17 &&
+          state.rows === 17 &&
+          state.zoom === 1 &&
+          state.panX === 0 &&
+          state.panY === 0 &&
+          state.history.length === 0 &&
+          state.redoStack.length === 0
+        ) {
+          showToast('Studio sudah dalam kondisi default');
+          return;
+        }
+        showConfirm(
+          'Reset Studio?',
+          'Mengembalikan grid ke ukuran 17 × 17, menghapus semua isi kotak, mereset riwayat Undo/Redo, serta memusatkan tampilan.',
+          resetStudio
+        );
+      });
+
+      // --- SHORTCUT KEYBOARD ---
+      window.addEventListener('keydown', (e) => {
+        if (document.activeElement.tagName === 'INPUT') return;
+
+        if (e.code === 'Space' && !state.spacePressed) {
+          e.preventDefault();
+          state.spacePressed = true;
+          canvas.style.cursor = 'grab';
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          redo();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          undo();
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          redo();
+        } else if (e.key.toLowerCase() === 'd') {
+          setTool('draw');
+        } else if (e.key.toLowerCase() === 'e') {
+          setTool('erase');
+        } else if (e.key === '+' || e.key === '=') {
+          setZoom(state.zoom * 1.2);
+        } else if (e.key === '-') {
+          setZoom(state.zoom / 1.2);
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') {
+          state.spacePressed = false;
+          if (!state.isPanning) {
+            canvas.style.cursor = state.tool === 'erase' ? 'cell' : 'crosshair';
+          }
+        }
+      });
+
+      // --- FILE & EKSPOR (JSON, SVG, PNG, JPG) ---
+      function triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      btnNewDoc.addEventListener('click', () => {
+        showConfirm(
+          'Buat Dokumen Baru?',
+          'Mengatur ulang kanvas ke ukuran default 17 × 17 dan membersihkan isi grid.',
+          resetStudio
+        );
+      });
+
+      btnSaveJson.addEventListener('click', () => {
+        const payload = {
+          app: 'Kufi Art Studio Pro',
+          version: 1,
+          cols: state.cols,
+          rows: state.rows,
+          cells: Array.from(state.cells.entries())
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        triggerDownload(blob, `kufi-project-${state.cols}x${state.rows}.json`);
+        showToast('Proyek JSON berhasil disimpan');
+      });
+
+      btnOpenJson.addEventListener('click', () => {
+        fileInputJson.click();
+      });
+
+      fileInputJson.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (!data || !Array.isArray(data.cells)) {
+              throw new Error('Format file tidak valid');
+            }
+            saveHistorySnapshot();
+            state.cols = Math.min(128, Math.max(4, Number(data.cols) || 17));
+            state.rows = Math.min(128, Math.max(4, Number(data.rows) || 17));
+            inputCols.value = state.cols;
+            inputRows.value = state.rows;
+            state.cells = new Map(data.cells);
+            state.redoStack = [];
+            state.zoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            updateHistoryButtons();
+            render();
+            showToast('Proyek berhasil dimuat');
+          } catch (err) {
+            showToast('Gagal memuat file proyek JSON');
+          } finally {
+            fileInputJson.value = '';
+          }
+        };
+        reader.readAsText(file);
+      });
+
+      // Ekspor Vektor SVG
+      btnExportSvg.addEventListener('click', () => {
+        const unit = 40; // 40px per unit kotak vektor
+        const width = state.cols * unit;
+        const height = state.rows * unit;
+
+        let rectsSvg = '';
+        state.cells.forEach((color, key) => {
+          const [c, r] = key.split(',').map(Number);
+          if (c >= 0 && c < state.cols && r >= 0 && r < state.rows) {
+            rectsSvg += `  <rect x="${c * unit}" y="${r * unit}" width="${unit}" height="${unit}" fill="${color}" shape-rendering="crispEdges" />\n`;
+          }
+        });
+
+        const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <!-- Generated by Kufi Art Studio Pro -->
+${rectsSvg}</svg>`;
+
+        const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+        triggerDownload(blob, `kufi-kaligrafi-${state.cols}x${state.rows}.svg`);
+        showToast('File vektor SVG berhasil diekspor');
+      });
+
+      // Ekspor Raster PNG / JPG Resolusi Tinggi
+      function exportRaster(format) {
+        const scale = 60; // 60px per kotak untuk hasil tajam
+        const padding = 40;
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = state.cols * scale + padding * 2;
+        outCanvas.height = state.rows * scale + padding * 2;
+        const octx = outCanvas.getContext('2d');
+
+        if (format === 'jpeg') {
+          octx.fillStyle = '#151515';
+          octx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+        }
+
+        state.cells.forEach((color, key) => {
+          const [c, r] = key.split(',').map(Number);
+          if (c >= 0 && c < state.cols && r >= 0 && r < state.rows) {
+            octx.fillStyle = color;
+            octx.fillRect(
+              padding + c * scale,
+              padding + r * scale,
+              scale,
+              scale
+            );
+          }
+        });
+
+        const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const ext = format === 'jpeg' ? 'jpg' : 'png';
+        outCanvas.toBlob((blob) => {
+          if (blob) {
+            triggerDownload(blob, `kufi-kaligrafi-${state.cols}x${state.rows}.${ext}`);
+            showToast(`Gambar ${ext.toUpperCase()} berhasil diekspor`);
+          }
+        }, mime, 0.95);
+      }
+
+      btnExportPng.addEventListener('click', () => exportRaster('png'));
+      btnExportJpg.addEventListener('click', () => exportRaster('jpeg'));
+
+      // --- OBSERVER RESIZE & STARTUP ---
+      const resizeObserver = new ResizeObserver(() => {
+        resizeCanvas();
+      });
+      resizeObserver.observe(wrapper);
+
+      window.addEventListener('resize', resizeCanvas);
+
+      window.addEventListener('DOMContentLoaded', () => {
+        initPalette();
+        setTool('draw');
+        updateHistoryButtons();
+        resizeCanvas();
+      });
+
+      // Panggil langsung juga untuk memastikan render instan
+      initPalette();
+      setTool('draw');
+      updateHistoryButtons();
+      requestAnimationFrame(resizeCanvas);
+    })();
+  </script>
+</body>
+</html>
